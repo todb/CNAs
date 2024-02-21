@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNA TLR & Root Compact List</title>
+    <!-- Include Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Include D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        /* CSS for the TLR & Root list */
+        .tlr-section {
+            margin-bottom: 20px;
+        }
+        .tlr-name {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        .root-section {
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .root-name {
+            flex-basis: 100%;
+            margin-bottom: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        .cna-name {
+            margin-right: 10px;
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CNA TLR & Root Compact List</h1>
+        <p>
+            This is a quickie parsing of the current CNA list, broken out by Top-Level Root (TLR). Currently, there's only two top-level roots,
+            the MITRE Corporation and CISA. But, if you see a third here, that means there's a new TLR!
+        </p>
+        
+        <div id="tlrRootList"></div>
+    </div>
+
+    <script>
+        // Fetch the JSON data
+        fetch('https://raw.githubusercontent.com/CVEProject/cve-website/dev/src/assets/data/CNAsList.json')
+        .then(response => response.json())
+        .then(data => {
+            // Object to store TLR and Root buckets and counts
+            var tlrRootBuckets = {};
+
+            // Loop through each CNA entry
+            data.forEach(function(cna) {
+                // Extract TLR and Root information
+                var tlr = cna.CNA.TLR.shortName;
+                var root = cna.CNA.root.shortName === 'n/a' ? tlr : cna.CNA.root.shortName;
+
+                // Replace invalid characters with underscores
+                tlr = tlr.replace(/[^\w]/g, '_');
+                root = root.replace(/[^\w]/g, '_');
+
+                // Check if the TLR bucket exists, if not, create it
+                if (!tlrRootBuckets[tlr]) {
+                    tlrRootBuckets[tlr] = {};
+                }
+
+                // Check if the Root bucket exists under TLR, if not, create it
+                if (!tlrRootBuckets[tlr][root]) {
+                    tlrRootBuckets[tlr][root] = [];
+                }
+
+                // Push the CNA info into the respective TLR and Root bucket
+                tlrRootBuckets[tlr][root].push(cna);
+            });
+
+            // Display TLR and Root list
+            Object.keys(tlrRootBuckets).forEach(function(tlr) {
+                var rootBuckets = tlrRootBuckets[tlr];
+
+                // Create HTML for TLR section
+                var tlrHtml = '<div class="tlr-section">';
+                tlrHtml += '<div class="tlr-name">' + tlr + '</div>';
+
+                // Iterate through root buckets
+                Object.keys(rootBuckets).forEach(function(root) {
+                    var cnaList = rootBuckets[root];
+                    var color = getRandomColor(); // Get a random color for the Root section
+
+                    // Create HTML for Root section
+                    tlrHtml += '<div class="root-section">';
+                    tlrHtml += '<div class="root-name" style="color: ' + color + ';">' + root + ' (' + cnaList.length + ')</div>';
+
+                    // Create HTML for CNAs under the Root section
+                    cnaList.forEach(function(cna) {
+                        var textColor = getContrastTextColor(color); // Determine text color based on background color contrast
+                        tlrHtml += '<a href="' + cna.disclosurePolicy[0].url + '" target="_blank" class="cna-name" style="background-color: ' + color + '; color: ' + textColor + ';" title="' + cna.organizationName + '">' + cna.shortName + '</a>';
+                    });
+
+                    tlrHtml += '</div>';
+                });
+
+                tlrHtml += '</div>';
+                document.getElementById('tlrRootList').innerHTML += tlrHtml;
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching JSON data:', error);
+        });
+
+        // Function to generate a random color
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        // Function to determine text color based on background color contrast
+        function getContrastTextColor(hexColor) {
+            var threshold = 130; // Adjust the threshold value as needed
+            var r = parseInt(hexColor.substr(1, 2), 16);
+            var g = parseInt(hexColor.substr(3, 2), 16);
+            var b = parseInt(hexColor.substr(5, 2), 16);
+            var luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            return luminance > threshold ? '#000' : '#fff';
+        }
+    </script>
+</body>
+</html>
