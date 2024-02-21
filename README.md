@@ -8,3 +8,5 @@ This list pulls directly from https://github.com/CVEProject/cve-website/tree/dev
 this website is quite definitely an unofficial, probably error-prone parsing of that data.
 
 If you notice any bugs, you should report those to https://github.com/todb/CNAs .
+
+This repo is MIT-Licensed, copyrighted by [Huge Success, LLC](https://hugesuccess.org). As much as ChatGPT sourced code can be copyrighted, anyway.
